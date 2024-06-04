@@ -1,9 +1,25 @@
 CREATE DATABASE LibMan;
 
-CREATE TABLE 'books'{
-    'id' INT AUTO_INCREMENT,
-    'title' VARCHAR(255),
-    'author' VARCHAR(255),
-    'isinlib' BOOLEAN
-    PRIMARY KEY ('id')
-};
+CREATE TABLE books (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    author VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE Users (
+    userid INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    pass VARCHAR(255) NOT NULL,
+    isAdmin BOOLEAN DEFAULT 0 NOT NULL,
+    acctcreate TIMESTAMP DEFAULT NOW() NOT NULL
+);
+
+CREATE TABLE BookRequests (
+    RequestID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    BookID INT,
+    RequestDate TIMESTAMP NOT NULL DEFAULT NOW(),
+    Status VARCHAR(255) DEFAULT 'Pending',
+    FOREIGN KEY (UserID) REFERENCES User(UserID),
+    FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);

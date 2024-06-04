@@ -9,9 +9,4 @@ const dbConn = mysql.createConnection({
     database : process.env.DATABASE
 });
 
-dbConn.connect(function(err) {
-  if(err) throw err;
-  console.log('hey db is connected!');
-});
-
 export default dbConn;
