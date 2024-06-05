@@ -121,3 +121,20 @@ router.get('/listclient', (req, res) => {
 })
 
 export default router;
+
+router.get('/viewrequest', (req, res)=>{
+    const sql="SELECT BookRequests.RequestID, Users.username, books.title ,books.author, BookRequests.RequestDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID JOIN Users ON BookRequests.UserID=Users.userid WHERE BookRequests.Status='Pending'" 
+    dbConn.query(sql, (err, result)=>{
+        const row=result;
+        res.render("viewrequest", {"request": row});
+    })
+})
+
+router.post('/viewrequest', (req, res)=>{
+    const reqid= req.body;
+    const sql="UPDATE BookRequests SET Status = 'Approved' WHERE RequestID = ?";
+    dbConn.query(sql, reqid.id, (err, result) => {
+        if(err) throw err;
+        res.redirect('/viewrequest');
+    })
+})

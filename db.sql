@@ -20,6 +20,8 @@ CREATE TABLE BookRequests (
     BookID INT,
     RequestDate TIMESTAMP NOT NULL DEFAULT NOW(),
     Status VARCHAR(255) DEFAULT 'Pending',
-    FOREIGN KEY (UserID) REFERENCES User(UserID),
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (BookID) REFERENCES Books(BookID)
 );
+
+

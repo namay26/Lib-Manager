@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <% request.forEach(function(req) { %>
+        <form action="/viewrequest" method="POST">
+            <ul>
+                <li>
+                    <input type="hidden" name="id" value="<%=req.RequestID %>">
+                    <label for="username">Username:</label>
+                    <input type="text" name="username" id="username" value="<%= req.username %>" disabled>
+                    <label for="booktitle">Book Title:</label>
+                    <input type="text" name="booktitle" id="booktitle" value="<%= req.title %>" disabled>
+                    <label for="bookauthor">Book Author:</label>
+                    <input type="text" name="bookauthor" id="bookauthor" value="<%= req.author %>" disabled>
+                    <label for="reqdate">Request Date:</label>
+                    <input type="text" name="reqdate" id="reqdate" value="<%= req.RequestDate %>" disabled>
+                    <button type="submit">Approve</button>
+                </li>
+            </ul>    
+        </form>
+    <% }); %>
+    
+</body>
+</html>
