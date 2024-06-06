@@ -132,7 +132,7 @@ router.get('/viewrequest', (req, res)=>{
 
 router.post('/viewrequest', (req, res)=>{
     const reqid= req.body;
-    const sql="UPDATE BookRequests SET Status = 'Approved' WHERE RequestID = ?";
+    const sql="UPDATE BookRequests SET Status = 'Approved', AcceptDate=NOW() WHERE RequestID = ?";
     dbConn.query(sql, reqid.id, (err, result) => {
         if(err) throw err;
         res.redirect('/viewrequest');
@@ -159,7 +159,7 @@ router.post('/reqcheck', (req, res)=>{
 })
 
 router.get('/borrowHistory', (req, res)=>{
-    const sql="SELECT books.title, books.author, BookRequests.RequestDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=?" 
+    const sql="SELECT books.title, books.author, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=?" 
     dbConn.query(sql,req.session.user.userid, (err, result)=>{
         const row=result;
         res.render("borrowHistory", {"request": row});

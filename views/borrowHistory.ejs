@@ -8,7 +8,7 @@
 <body>
     <ul>
         <% request.forEach(function(borrow) { %>
-            <li>Title: <%= borrow.title %>, Author: <%= borrow.author %>, Request Date: <%= borrow.RequestDate %></li>
+            <li>Title: <%= borrow.title %>, Author: <%= borrow.author %>, Request Date: <%= borrow.RequestDate %>, Accept Date: <%= borrow.AcceptDate %> </li>
         <% }); %>
     </ul>
 </body>
