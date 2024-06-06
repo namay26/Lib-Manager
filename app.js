@@ -4,8 +4,18 @@ const app = express();
 const port = 3000;
 import dbConn from './database.js';
 import routes from './routes/routes.js';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
+app.use(cookieParser());
+app.use(session({
+    resave: true,
+    saveUninitialized: true,
+    secret: process.env.SECRET
+  }));
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 app.use(express.json());

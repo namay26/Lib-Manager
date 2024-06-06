@@ -57,6 +57,8 @@ router.post('/login', (req, res)=> {
     dbConn.query(sql, [username, password], (err, result) => {
         if(err) throw err;
         if(result.length > 0) {
+            req.session.user = result[0];
+            req.session.save();
             const {isAdmin} = result[0] ;
             if(isAdmin==1)
                 {
@@ -120,8 +122,6 @@ router.get('/listclient', (req, res) => {
     })
 })
 
-export default router;
-
 router.get('/viewrequest', (req, res)=>{
     const sql="SELECT BookRequests.RequestID, Users.username, books.title ,books.author, BookRequests.RequestDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID JOIN Users ON BookRequests.UserID=Users.userid WHERE BookRequests.Status='Pending'" 
     dbConn.query(sql, (err, result)=>{
@@ -138,3 +138,32 @@ router.post('/viewrequest', (req, res)=>{
         res.redirect('/viewrequest');
     })
 })
+
+router.get('/reqcheck', (req, res)=>{
+    const sql = "SELECT * FROM books WHERE id NOT IN (SELECT BookID FROM BookRequests WHERE Status='Pending')";
+    dbConn.query(sql, (err, result) => {
+        if(err) throw err;
+        const rows = result;
+        res.render("reqcheck", {"books": rows} );
+    })
+})
+
+router.post('/reqcheck', (req, res)=>{
+    const id=req.body.id;
+    const userid=req.session.user.userid;
+    const sql="INSERT INTO BookRequests (BookID, UserID, RequestDate, Status) VALUES (?, ?, NOW(), 'Pending')";
+    dbConn.query(sql, [id, userid], (err, result) => {
+        if(err) throw err;
+        res.redirect('/reqcheck');
+    })
+})
+
+router.get('/borrowHistory', (req, res)=>{
+    const sql="SELECT books.title, books.author, BookRequests.RequestDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=?" 
+    dbConn.query(sql,req.session.user.userid, (err, result)=>{
+        const row=result;
+        res.render("borrowHistory", {"request": row});
+    })
+})
+
+export default router;
