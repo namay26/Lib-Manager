@@ -142,17 +142,21 @@ router.get('/deletebook', isAdmin, (req,res) => {
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
         const rows = result;
-        // To do - Add a check for, if all books are returned.
         res.render("deletebook", {"books": rows} );
     })
 })
 
 router.post('/deletebook', isAdmin, (req, res) => {
     const id=req.body.id;
-    const sql="DELETE FROM books WHERE id = ?";
-    dbConn.query(sql, id, (err, result) => {
+    const sql2="SELECT * FROM BookRequests WHERE BookID = ?";
+    dbConn.query(sql2, id, (err2, result2) => {
+        if(err2) throw err2;
+        if(result2.length > 0) return res.status(401).send("Book is currently borrowed");
+        const sql="DELETE FROM books WHERE id = ?";
+        dbConn.query(sql, id, (err, result) => {
         if(err) throw err;
         res.redirect('/listbooks');
+        })
     })
 })
 
@@ -177,9 +181,11 @@ router.post('/viewrequest', isAdmin, (req, res)=>{
     const reqid= req.body;
     const sql="UPDATE BookRequests SET Status = 'Approved', AcceptDate=NOW() WHERE RequestID = ?";
     dbConn.query(sql, reqid.id, (err, result) => {
-        // TO-DO --1 negate from quantity of book when approved,
         if(err) throw err;
+        const sql1="UPDATE books SET quantity = quantity - 1 WHERE id = (SELECT BookID FROM BookRequests WHERE RequestID = ?)";
+        dbConn.query(sql1, reqid.id, (err1, result1) => {
         res.redirect('/viewrequest');
+        })
     })
 })
 
