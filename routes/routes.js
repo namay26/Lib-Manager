@@ -1,8 +1,12 @@
 import express, { json } from 'express';
 import dbConn from '../database.js';
-import hashPassword from '../middleware/auth.js';
+import {hashPassword, genToken, verifyToken } from '../middleware/auth.js';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const router = express.Router();
+
 
 router.get('/', (req, res) => {
     res.render("home");
@@ -21,12 +25,12 @@ router.get('/clientdash', (req, res) => {
     res.render("clientdash", {"username": username});
 })
 
-router.get('/admindashb', (req, res) => {
-    const username=req.session.user.username;
-    res.render("admindashb", {"username": username});
+router.get('/admindashb',isAdmin, async (req, res) => {
+    const jwt = await verifyToken(req.cookies.AccToken);
+    res.render("admindashb", {"username": jwt.username});
 })
 
-router.get('/listbooks', (req, res) => {
+router.get('/listbooks',isAdmin, (req, res) => {
     const sql = "SELECT * FROM books";
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
@@ -35,7 +39,7 @@ router.get('/listbooks', (req, res) => {
     })
 })
 
-router.post('/listbooks', (req, res) => {
+router.post('/listbooks',isAdmin, (req, res) => {
     const id=req.body.id;
     const sql="SELECT * FROM books WHERE id = ?";
     dbConn.query(sql, id, (err, result) => {
@@ -45,38 +49,70 @@ router.post('/listbooks', (req, res) => {
     })
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     const { username, password } = req.body;
-    //const pass = hashPassword(password);
-    const sql = "INSERT INTO Users (username, pass) VALUES (?, ?)";
-    dbConn.query(sql, [username, password], (err, result) => {
-        if(err) throw err;
-        res.redirect('/login');
+    const pass = await hashPassword(password);
+    const checkDuplicate="SELECT * FROM Users WHERE username= ?";
+    dbConn.query(checkDuplicate, username, (err1, results) => {
+        if(err1) return res.status(500).send("Server error");
+        if(results.length > 0) return res.status(401).send("Username already exists");
+        const sql = "INSERT INTO Users (username, pass) VALUES (?, ?)";
+        dbConn.query(sql, [username, pass], (err, result) => {
+            if(err) throw err;
+            res.redirect('/login');
+        })
     })
 })
 
-router.post('/login', (req, res)=> {
-    const { username, password }=req.body;
-    //const passwd=hashPassword(password);
-    const sql = "SELECT * FROM Users WHERE username = ? AND pass = ?";
-    dbConn.query(sql, [username, password], (err, result) => {
-        if(err) throw err;
-        if(result.length > 0) {
-            req.session.user = result[0];
-            req.session.save();
-            const {isAdmin} = result[0] ;
-            if(isAdmin==1)
-                {
-                    res.redirect('/admindashb');
+router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const sql = "SELECT * FROM Users WHERE username = ?";
+    dbConn.query(sql, [username], async (err, result) => {
+        if (err) throw err;
+        if (result.length > 0) {
+            const hash = result[0].pass;
+            const validPassword = await bcrypt.compare(password, hash);
+            if (validPassword) {
+                if (result[0].isAdmin === 1) {
+                    var payload = {
+                        id: result[0].userid,
+                        username: username,
+                        role: 'admin'
+                    }
+                    var accToken = await genToken(payload);
+                    res.clearCookie('Access-token');
+                    res.clearCookie('AccToken');
+                    res.cookie('AccToken', accToken, 
+                    { 
+                      httpOnly: true,
+                      maxAge: 1000 * 60 * 60 * 24
+                    });
+                    res.redirect('/adminDashb');
+                } else {
+                    var payload = {
+                        id: result[0].userid,
+                        username: username,
+                        role: 'client'
+                    }
+                    var accToken = await genToken(payload);
+                    res.clearCookie('Access-token');
+                    res.clearCookie('AccToken');
+                    res.cookie('AccToken', accToken,
+                    { 
+                      httpOnly: true, 
+                      maxAge: 1000 * 60 * 60 * 24 
+                    });
+                    res.redirect('/clientdash');
                 }
-            else
-                res.redirect('/clientdash');
+            } else {
+                return res.status(401).send("Username or password incorrect");
+            }
         } else {
-            res.redirect('/');      
+            return res.status(401).send("No record found for the given Username. Please register first.");
         }
-    })
+    });
+});
 
-})
 
 router.post('/updatebooks', (req, res) => {
     const { id, title, author } = req.body;
@@ -92,9 +128,9 @@ router.get('/addbook', (req, res) => {
 })
 
 router.post('/addbook', (req, res) => {
-    const { title, author } = req.body;
-    const sql = "INSERT INTO books (title, author) VALUES (?, ?)";
-    dbConn.query(sql, [title, author], (err, result) => {
+    const { title, author, genre, quantity } = req.body;
+    const sql = "INSERT INTO books (title, author, genre, quantity) VALUES (?, ?, ?, ?)";
+    dbConn.query(sql, [title, author, genre, quantity], (err, result) => {
         if(err) throw err;
         res.redirect('/listbooks');
     })
@@ -105,6 +141,7 @@ router.get('/deletebook', (req,res) => {
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
         const rows = result;
+        // To do - Add a check for, if all books are returned.
         res.render("deletebook", {"books": rows} );
     })
 })
@@ -139,14 +176,16 @@ router.post('/viewrequest', (req, res)=>{
     const reqid= req.body;
     const sql="UPDATE BookRequests SET Status = 'Approved', AcceptDate=NOW() WHERE RequestID = ?";
     dbConn.query(sql, reqid.id, (err, result) => {
+        // TO-DO --1 negate from quantity of book when approved,
         if(err) throw err;
         res.redirect('/viewrequest');
     })
 })
 
 router.get('/reqcheck', (req, res)=>{
-    const sql = "SELECT * FROM books WHERE id NOT IN (SELECT BookID FROM BookRequests WHERE Status='Pending' OR Status='Approved')";
-    dbConn.query(sql, (err, result) => {
+    const userid=req.session.user.userid;
+    const sql = "SELECT * FROM books WHERE id NOT IN (SELECT BookID FROM BookRequests WHERE (UserID = ?) AND (Status='Pending' OR Status='Approved')) AND quantity > 0";
+    dbConn.query(sql, userid, (err, result) => {
         if(err) throw err;
         const rows = result;
         res.render("reqcheck", {"books": rows} );
@@ -164,7 +203,7 @@ router.post('/reqcheck', (req, res)=>{
 })
 
 router.get('/borrowHistory', (req, res)=>{
-    const sql="SELECT BookRequests.RequestID, books.title, books.author, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=? AND BookRequests.Status='Approved'" 
+    const sql="SELECT BookRequests.RequestID, books.title, books.author, books.genre, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=? AND BookRequests.Status='Approved'" 
     dbConn.query(sql,req.session.user.userid, (err, result)=>{
         const row=result;
         res.render("borrowHistory", {"request": row});
