@@ -1,5 +1,6 @@
 import express, { json } from 'express';
 import dbConn from '../database.js';
+import hashPassword from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -16,11 +17,13 @@ router.get('/register', (req, res) => {
 })
 
 router.get('/clientdash', (req, res) => {
-    res.render("clientdash");
+    const username=req.session.user.username;
+    res.render("clientdash", {"username": username});
 })
 
 router.get('/admindashb', (req, res) => {
-    res.render("admindashb");
+    const username=req.session.user.username;
+    res.render("admindashb", {"username": username});
 })
 
 router.get('/listbooks', (req, res) => {
@@ -44,15 +47,17 @@ router.post('/listbooks', (req, res) => {
 
 router.post('/register', (req, res) => {
     const { username, password } = req.body;
+    //const pass = hashPassword(password);
     const sql = "INSERT INTO Users (username, pass) VALUES (?, ?)";
     dbConn.query(sql, [username, password], (err, result) => {
         if(err) throw err;
-        res.redirect('/');
+        res.redirect('/login');
     })
 })
 
 router.post('/login', (req, res)=> {
     const { username, password }=req.body;
+    //const passwd=hashPassword(password);
     const sql = "SELECT * FROM Users WHERE username = ? AND pass = ?";
     dbConn.query(sql, [username, password], (err, result) => {
         if(err) throw err;
@@ -140,7 +145,7 @@ router.post('/viewrequest', (req, res)=>{
 })
 
 router.get('/reqcheck', (req, res)=>{
-    const sql = "SELECT * FROM books WHERE id NOT IN (SELECT BookID FROM BookRequests WHERE Status='Pending')";
+    const sql = "SELECT * FROM books WHERE id NOT IN (SELECT BookID FROM BookRequests WHERE Status='Pending' OR Status='Approved')";
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
         const rows = result;
@@ -159,10 +164,50 @@ router.post('/reqcheck', (req, res)=>{
 })
 
 router.get('/borrowHistory', (req, res)=>{
-    const sql="SELECT books.title, books.author, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=?" 
+    const sql="SELECT BookRequests.RequestID, books.title, books.author, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=? AND BookRequests.Status='Approved'" 
     dbConn.query(sql,req.session.user.userid, (err, result)=>{
         const row=result;
         res.render("borrowHistory", {"request": row});
+    })
+})
+
+router.post('/borrowHistory', (req, res)=>{
+    const reqid= req.body.id;
+    console.log(reqid);
+    const sql='UPDATE BookRequests SET Status = "Returned", ReturnDate=NOW() WHERE RequestID = ?';
+    dbConn.query(sql, reqid, (err, result) => {
+        if(err) throw err;
+        res.redirect('/borrowHistory');
+    })
+})
+
+router.get('/requestForAdmin', (req, res) => {
+   res.render('requestForAdmin');
+})
+
+router.post('/requestForAdmin', (req, res) => {
+    const sql="UPDATE Users SET adminStatus='Pending' WHERE username=? AND userid=?";
+    dbConn.query(sql, [req.session.user.username, req.session.user.userid], (err, result) => {
+        if(err) throw err;
+        res.redirect('/clientdash');
+    })
+})
+
+router.get('/addAdmin', (req, res) => {
+    const sql="Select userid,username, acctcreate from Users where isAdmin=0 AND adminStatus='Pending'";
+    dbConn.query(sql, (err, result) => {
+        if(err) throw err;
+        const rows = result;
+        res.render("addAdmin", {"users": rows} );
+    })
+})
+
+router.post('/addAdmin', (req, res) => {
+    const userid=req.body.id;
+    const sql="UPDATE Users SET isAdmin=1, adminStatus='isAdmin' WHERE userid=?";
+    dbConn.query(sql, userid, (err, result) => {
+        if(err) throw err;
+        res.redirect('/addAdmin');
     })
 })
 

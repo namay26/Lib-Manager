@@ -11,7 +11,8 @@ CREATE TABLE Users (
     username VARCHAR(255) NOT NULL,
     pass VARCHAR(255) NOT NULL,
     isAdmin BOOLEAN DEFAULT 0 NOT NULL,
-    acctcreate TIMESTAMP DEFAULT NOW() NOT NULL
+    acctcreate TIMESTAMP DEFAULT NOW() NOT NULL,
+    adminStatus ENUM('NotRequested','Pending','isAdmin') DEFAULT 'NotRequested' NOT NULL
 );
 
 CREATE TABLE BookRequests (
@@ -21,9 +22,11 @@ CREATE TABLE BookRequests (
     RequestDate TIMESTAMP NOT NULL DEFAULT NOW(),
     AcceptDate TIMESTAMP DEFAULT NULL,
     ReturnDate TIMESTAMP DEFAULT NULL,
-    Status VARCHAR(255) DEFAULT 'Pending',
+    Status ENUM('Pending','Approved','Returned') DEFAULT 'Returned' NOT NULL,
     FOREIGN KEY (UserID) REFERENCES Users(userid),
     FOREIGN KEY (BookID) REFERENCES books(id)
 );
+
+
 
 

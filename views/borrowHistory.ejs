@@ -8,7 +8,18 @@
 <body>
     <ul>
         <% request.forEach(function(borrow) { %>
-            <li>Title: <%= borrow.title %>, Author: <%= borrow.author %>, Request Date: <%= borrow.RequestDate %>, Accept Date: <%= borrow.AcceptDate %> </li>
+            <form action="/borrowHistory" method="POST">
+                <input type="hidden" name="id" value="<%= borrow.RequestID %>">
+                <label for="title">Title:</label>
+                <input type="text" name="title" id="title" value="<%= borrow.title %>" disabled>
+                <label for="author">Author:</label>
+                <input type="text" name="author" id="author" value="<%= borrow.author %>" disabled>
+                <label for="ReqDate">Request Date:</label>
+                <input type="text" name="ReqDate" id="ReqDate" value="<%= borrow.RequestDate %>" disabled>
+                <label for="AccDate">Accept Date:</label>
+                <input type="text" name="AccDate" id="AccDate" value="<%= borrow.AcceptDate %>" disabled>
+                <button type="submit">Return</button>
+            </form>
         <% }); %>
     </ul>
 </body>

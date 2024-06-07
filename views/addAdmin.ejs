@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <% users.forEach(function(user) { %>
+        <form action="/addAdmin" method="POST">
+            <input type="hidden" name="id" value="<%= user.userid %>">
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" value="<%= user.username %>" disabled>
+            <label for="acctcreate">Account Created On:</label>
+            <input type="text" name="acctcreate" id="acctcreate" value="<%= user.acctcreate %>" disabled>
+            <button type="submit">Make Admin!</button>
+        </form>
+    <% }); %>
+</body>
+</html>
