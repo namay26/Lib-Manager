@@ -1,6 +1,6 @@
 import express, { json } from 'express';
 import dbConn from '../database.js';
-import {hashPassword, genToken, verifyToken } from '../middleware/auth.js';
+import { hashPassword, genToken, verifyToken, isAdmin, isClient } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -13,6 +13,7 @@ router.get('/', (req, res) => {
 })
 
 router.get('/login', (req, res) => {
+    res.clearCookie('AccToken');
     res.render("login");
 })
 
@@ -20,9 +21,9 @@ router.get('/register', (req, res) => {
     res.render("register");
 })
 
-router.get('/clientdash', (req, res) => {
-    const username=req.session.user.username;
-    res.render("clientdash", {"username": username});
+router.get('/clientdash',isClient, async (req, res) => {
+    const jwt = await verifyToken(req.cookies.AccToken);
+    res.render("clientdash", {"username": jwt.username});
 })
 
 router.get('/admindashb',isAdmin, async (req, res) => {
@@ -114,7 +115,7 @@ router.post('/login', async (req, res) => {
 });
 
 
-router.post('/updatebooks', (req, res) => {
+router.post('/updatebooks',isAdmin, (req, res) => {
     const { id, title, author } = req.body;
     const sql = "UPDATE books SET title = ?, author = ? WHERE id = ?";
     dbConn.query(sql, [title, author, id], (err, result) => {
@@ -123,11 +124,11 @@ router.post('/updatebooks', (req, res) => {
     })
 })
 
-router.get('/addbook', (req, res) => {
+router.get('/addbook',isAdmin, (req, res) => {
     res.render("addbook");
 })
 
-router.post('/addbook', (req, res) => {
+router.post('/addbook',isAdmin, (req, res) => {
     const { title, author, genre, quantity } = req.body;
     const sql = "INSERT INTO books (title, author, genre, quantity) VALUES (?, ?, ?, ?)";
     dbConn.query(sql, [title, author, genre, quantity], (err, result) => {
@@ -136,7 +137,7 @@ router.post('/addbook', (req, res) => {
     })
 })
 
-router.get('/deletebook', (req,res) => {
+router.get('/deletebook', isAdmin, (req,res) => {
     const sql = "SELECT * FROM books";
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
@@ -146,7 +147,7 @@ router.get('/deletebook', (req,res) => {
     })
 })
 
-router.post('/deletebook', (req, res) => {
+router.post('/deletebook', isAdmin, (req, res) => {
     const id=req.body.id;
     const sql="DELETE FROM books WHERE id = ?";
     dbConn.query(sql, id, (err, result) => {
@@ -155,7 +156,7 @@ router.post('/deletebook', (req, res) => {
     })
 })
 
-router.get('/listclient', (req, res) => {
+router.get('/listclient',isClient, (req, res) => {
     const sql = "SELECT * FROM books";
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
@@ -164,7 +165,7 @@ router.get('/listclient', (req, res) => {
     })
 })
 
-router.get('/viewrequest', (req, res)=>{
+router.get('/viewrequest', isAdmin,  (req, res)=>{
     const sql="SELECT BookRequests.RequestID, Users.username, books.title ,books.author, BookRequests.RequestDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID JOIN Users ON BookRequests.UserID=Users.userid WHERE BookRequests.Status='Pending'" 
     dbConn.query(sql, (err, result)=>{
         const row=result;
@@ -172,7 +173,7 @@ router.get('/viewrequest', (req, res)=>{
     })
 })
 
-router.post('/viewrequest', (req, res)=>{
+router.post('/viewrequest', isAdmin, (req, res)=>{
     const reqid= req.body;
     const sql="UPDATE BookRequests SET Status = 'Approved', AcceptDate=NOW() WHERE RequestID = ?";
     dbConn.query(sql, reqid.id, (err, result) => {
@@ -182,8 +183,9 @@ router.post('/viewrequest', (req, res)=>{
     })
 })
 
-router.get('/reqcheck', (req, res)=>{
-    const userid=req.session.user.userid;
+router.get('/reqcheck',isClient, async (req, res)=>{
+    const jwt = await verifyToken(req.cookies.AccToken);
+    const userid=jwt.id;
     const sql = "SELECT * FROM books WHERE id NOT IN (SELECT BookID FROM BookRequests WHERE (UserID = ?) AND (Status='Pending' OR Status='Approved')) AND quantity > 0";
     dbConn.query(sql, userid, (err, result) => {
         if(err) throw err;
@@ -192,9 +194,10 @@ router.get('/reqcheck', (req, res)=>{
     })
 })
 
-router.post('/reqcheck', (req, res)=>{
+router.post('/reqcheck',isClient, async (req, res)=>{
     const id=req.body.id;
-    const userid=req.session.user.userid;
+    const jwt = await verifyToken(req.cookies.AccToken);
+    const userid=jwt.id;
     const sql="INSERT INTO BookRequests (BookID, UserID, RequestDate, Status) VALUES (?, ?, NOW(), 'Pending')";
     dbConn.query(sql, [id, userid], (err, result) => {
         if(err) throw err;
@@ -202,15 +205,17 @@ router.post('/reqcheck', (req, res)=>{
     })
 })
 
-router.get('/borrowHistory', (req, res)=>{
+router.get('/borrowHistory',isClient, async (req, res)=>{
     const sql="SELECT BookRequests.RequestID, books.title, books.author, books.genre, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=? AND BookRequests.Status='Approved'" 
-    dbConn.query(sql,req.session.user.userid, (err, result)=>{
+    const jwt = await verifyToken(req.cookies.AccToken);
+    const userid=jwt.id;
+    dbConn.query(sql,userid, (err, result)=>{
         const row=result;
         res.render("borrowHistory", {"request": row});
     })
 })
 
-router.post('/borrowHistory', (req, res)=>{
+router.post('/borrowHistory',isClient, (req, res)=>{
     const reqid= req.body.id;
     console.log(reqid);
     const sql='UPDATE BookRequests SET Status = "Returned", ReturnDate=NOW() WHERE RequestID = ?';
@@ -220,19 +225,22 @@ router.post('/borrowHistory', (req, res)=>{
     })
 })
 
-router.get('/requestForAdmin', (req, res) => {
+router.get('/requestForAdmin',isClient, (req, res) => {
    res.render('requestForAdmin');
 })
 
-router.post('/requestForAdmin', (req, res) => {
+router.post('/requestForAdmin',isClient, async (req, res) => {
     const sql="UPDATE Users SET adminStatus='Pending' WHERE username=? AND userid=?";
-    dbConn.query(sql, [req.session.user.username, req.session.user.userid], (err, result) => {
+    const jwt = await verifyToken(req.cookies.AccToken);
+    const userid=jwt.id;
+    const username=jwt.username;
+    dbConn.query(sql, [username, userid], (err, result) => {
         if(err) throw err;
         res.redirect('/clientdash');
     })
 })
 
-router.get('/addAdmin', (req, res) => {
+router.get('/addAdmin',isAdmin,  (req, res) => {
     const sql="Select userid,username, acctcreate from Users where isAdmin=0 AND adminStatus='Pending'";
     dbConn.query(sql, (err, result) => {
         if(err) throw err;
@@ -241,7 +249,7 @@ router.get('/addAdmin', (req, res) => {
     })
 })
 
-router.post('/addAdmin', (req, res) => {
+router.post('/addAdmin', isAdmin, (req, res) => {
     const userid=req.body.id;
     const sql="UPDATE Users SET isAdmin=1, adminStatus='isAdmin' WHERE userid=?";
     dbConn.query(sql, userid, (err, result) => {

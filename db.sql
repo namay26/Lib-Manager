@@ -18,7 +18,7 @@ CREATE TABLE Users (
 );
 
 INSERT INTO USERS (username, pass, isAdmin, adminStatus) VALUES ('admin', '$2b$10$.nLfgWWsY040rb8UxhwRq.AECUI5ng0WJ9IsoS9c.8XCDjOD4AOCW', 1, 'isAdmin');
-/*
+/*  
     Master Admin.
     username: admin
     password: admin123

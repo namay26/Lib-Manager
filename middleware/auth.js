@@ -18,9 +18,23 @@ const verifyToken = async function(token){
     return jwt.verify(token, process.env.SECRET);
 }
 
-const isAdmin = async function(token){
-    const jwt = await verifyToken(token);
-    return jwt.role == 'admin';
-}
+const isAdmin = async (req, res, next) => {
+    if(!req.cookies.AccToken) return res.status(401).send("Unauthorized : No token provided");
+    const jwt = await verifyToken(req.cookies.AccToken);
+    if(jwt.role == 'admin')
+    next();
+    else
+    res.status(401).send("Unauthorized");
+};
 
-export { hashPassword, genToken, verifyToken};
+const isClient = async (req, res, next) => {
+    if(!req.cookies.AccToken) return res.status(401).send("Unauthorized : No token provided");
+    const jwt = await verifyToken(req.cookies.AccToken);
+    if(jwt.role == 'client')
+    next();
+    else
+    res.status(401).send("Unauthorized");
+};
+
+
+export { hashPassword, genToken, verifyToken, isAdmin , isClient};
