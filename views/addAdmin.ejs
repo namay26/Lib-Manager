@@ -15,6 +15,12 @@
         width:80%;
         text-align: center;
       }
+      .b{
+        margin-left: 0.05in;
+        color: white;
+        background-color: red;
+        border-radius: 0.05in;
+      }
     </style>
 </head>
 <body>
@@ -41,6 +47,9 @@
               <li class="nav-item">
                 <a class="nav-link active" href="/addAdmin">Add Admins</a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link b" href="/logout">LOG-OUT</a>
+              </li>
             </ul>
             <div>
                 <input type="button" class="right" value="Admin" disabled>
@@ -64,7 +73,7 @@
             <input type="hidden" name="id" value="<%= user.userid %>">
             <th scope="row"><input type="text" name="name" id="name" value="<%= user.username %>" disabled></th>
             <td><input type="text" name="acctcreate" id="acctcreate" value="<%= user.acctcreate %>" disabled></td>
-            <td><button type="submit">Make Admin!</button></td>
+            <td><button type="submit" class="btn btn-secondary">Make Admin!</button></td>
           </tr>
           <% }); %>
         </form>
