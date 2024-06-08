@@ -280,6 +280,9 @@ router.get('/viewrequest', isAdmin,  (req, res)=>{
 
 router.post('/viewrequest', isAdmin, (req, res)=>{
     try{
+        console.log(req.body);  
+        const option=req.body.choice;
+        if(option=="approve"){
         const reqid= req.body;
         const sql="UPDATE BookRequests SET Status = 'Approved', AcceptDate=NOW() WHERE RequestID = ?";
         dbConn.query(sql, reqid.id, (err, result) => {
@@ -289,6 +292,15 @@ router.post('/viewrequest', isAdmin, (req, res)=>{
             res.redirect('/viewrequest');
             })
         })
+    }
+    else{
+        const reqid= req.body;
+        const sql="DELETE FROM BookRequests WHERE RequestID = ?";
+        dbConn.query(sql, reqid.id, (err1, result1) => {
+            if(err1) res.status(500).send("Server error");
+            res.redirect('/viewrequest');
+        })
+    }
     }
     catch (error) {
         res.status(500).send("Error while approving the request!");
@@ -312,19 +324,15 @@ router.get('/reqcheck',isClient, async (req, res)=>{
 })
 
 router.post('/reqcheck',isClient, async (req, res)=>{
-    try{
-        const id=req.body.id;
         const jwt = await verifyToken(req.cookies.AccToken);
+        const id=req.body.id;
         const userid=jwt.id;
         const sql="INSERT INTO BookRequests (BookID, UserID, RequestDate, Status) VALUES (?, ?, NOW(), 'Pending')";
         dbConn.query(sql, [id, userid], (err, result) => {
-            if(err) res.status(500).send("Server error");
+            if(err) throw(err)
             res.redirect('/reqcheck');
         })
-    }
-    catch (error) {
-        res.status(500).send("Error while requesting the book!");
-    }
+
 })
 
 router.get('/borrowHistory',isClient, async (req, res)=>{
@@ -429,12 +437,24 @@ router.get('/addAdmin',isAdmin,  (req, res) => {
 
 router.post('/addAdmin', isAdmin, (req, res) => {
     try{
+        const option=req.body.choice;
+        if(option=="approve"){
         const userid=req.body.id;
         const sql="UPDATE Users SET isAdmin=1, adminStatus='isAdmin' WHERE userid=?";
         dbConn.query(sql, userid, (err, result) => {
             if(err) res.status(500).send("Server error");
             res.redirect('/addAdmin');
         })
+        }
+        else{
+            const userid=req.body.id;
+            const sql="UPDATE Users SET adminStatus='NotRequested' WHERE userid=?";
+            dbConn.query(sql, userid, (err, result) => {
+                if(err) res.status(500).send("Server error");
+                res.redirect('/addAdmin');
+            })
+        }
+
     }
     catch (error) {
         res.status(500).send("Error while adding Admin!");

@@ -21,6 +21,13 @@
         background-color: red;
         border-radius: 0.05in;
       }
+      .deny{
+        background-color: red;
+      }
+      .make{
+        margin-right:5px; 
+        background-color: green;
+      }
     </style>
 </head>
 <body>
@@ -58,7 +65,6 @@
         </div>
       </nav>
       <center>
-      <form action="/addAdmin" method="POST">
       <table class="table item table-striped">
         <thead>
           <tr>
@@ -69,14 +75,16 @@
         </thead>
         <tbody>
           <% users.forEach(function(user) { %>
+            <form action="/addAdmin" method="POST">
           <tr>
             <input type="hidden" name="id" value="<%= user.userid %>">
             <th scope="row"><input type="text" name="name" id="name" value="<%= user.username %>" disabled></th>
             <td><input type="text" name="acctcreate" id="acctcreate" value="<%= user.acctcreate %>" disabled></td>
-            <td><button type="submit" class="btn btn-secondary">Make Admin!</button></td>
+            <td><button type="submit" name="choice" class="btn make btn-secondary">Make Admin!</button><button name="choice" type="submit" class="btn deny btn-secondary">Deny</button></td>
           </tr>
-          <% }); %>
         </form>
+          <% }); %>
+
       </center>
 </body>
 </html>

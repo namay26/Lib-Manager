@@ -58,7 +58,7 @@
     </div>
   </nav>
       <center>
-      <form action="/reqcheck" method="POST">
+
       <table class="table item table-striped">
         <thead>
           <tr>
@@ -70,17 +70,19 @@
         </thead>
         <tbody>
           <% books.forEach(function(book) { %>
-          <tr>
+            <form action="/reqcheck" method="POST">
+            <tr>
             <input type="hidden" name="id" value="<%= book.id %>">
             <th scope="row"><%= book.title %></th>
             <td><%= book.author %></td>
             <td><%= book.genre %></td>
             <td><button type="submit">Request for Checkout!</button></td>
           </tr>
+        </form>
           <% }); %>
         </tbody>
         </table>
-       </form>
+
       </center>
 </body>
 </html>
