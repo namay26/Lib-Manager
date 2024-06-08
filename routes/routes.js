@@ -9,8 +9,12 @@ const router = express.Router();
 
 router.get('/', (req, res) => {
     try{
-    res.clearCookie('AccToken');
-    res.render("home");
+        if(req.cookies.AccToken){
+            const jwt=verifyToken(req.cookies.AccToken);
+            if(jwt.role==='admin') return res.redirect('/admindashb');
+            if(jwt.role==='client') return res.redirect('/clientdash');
+        }
+        res.render("home");
     }
     catch (error) {
         res.status(500).send("Error fetching Homepage.");
@@ -20,7 +24,9 @@ router.get('/', (req, res) => {
 router.get('/login', (req, res) => {
     try{
     res.clearCookie('AccToken');
-    res.render("login");
+    const msg=decodeURIComponent(req.query.msg);
+    if(!(req.query.msg)) return res.render("login", {"msg": ""});
+    res.render("login", {"msg": msg});
     }
     catch (error) {
         res.status(500).send("Error fetching Login page.");
@@ -62,7 +68,9 @@ router.get('/listbooks',isAdmin, (req, res) => {
         dbConn.query(sql, (err, result) => {
             if(err) res.status(500).send("Server error");
             const rows = result;
-            res.render("listbooks", {"books": rows} );
+            const msg=decodeURIComponent(req.query.msg);
+            if(!(req.query.msg)) return res.render("listbooks", {"books": rows, "msg": ""} );;
+            res.render("listbooks", {"books": rows, "msg": msg} );
         })
     }
     catch (error) {
@@ -97,7 +105,8 @@ router.post('/register', async (req, res) => {
             const sql = "INSERT INTO Users (username, pass) VALUES (?, ?)";
             dbConn.query(sql, [username, pass], (err, result) => {
                 if(err) res.status(500).send("Server error");
-                res.redirect('/login');
+                var msg=encodeURIComponent('User registered successfully!');
+                res.redirect('/login/?msg=' + msg);
             })
         })
     }
@@ -148,10 +157,12 @@ router.post('/login', async (req, res) => {
                         res.redirect('/clientdash');
                     }
                 } else {
-                    return res.status(401).send("Username or password incorrect");
+                    const msg=encodeURIComponent('Username or password incorrect');
+                    res.redirect('/login/?msg=' + msg);
                 }
             } else {
-                return res.status(401).send("No record found for the given Username. Please register first.");
+                const msg=encodeURIComponent('Nos such username found');
+                res.redirect('/login/?msg=' + msg);
             }
         })
     }
@@ -168,7 +179,8 @@ router.post('/updatebooks',isAdmin, (req, res) => {
         const sql = "UPDATE books SET title = ?, author = ? WHERE id = ?";
         dbConn.query(sql, [title, author, id], (err, result) => {
             if(err) res.status(500).send("Server error");
-            res.redirect('/listbooks');
+            var msg=encodeURIComponent('Book Updated successfully!');
+            res.redirect('/listbooks/?msg=' + msg);
         })
     }
     catch (error) {
@@ -198,7 +210,8 @@ router.post('/addbook',isAdmin, (req, res) => {
                 const sql = "UPDATE books SET quantity = quantity + ? WHERE title = ? AND author = ?";
                 dbConn.query(sql, [quantity, title, author], (err, result) => {
                     if(err) res.status(500).send("Server error");
-                    res.redirect('/listbooks');
+                    const msg=encodeURIComponent('Book added successfully!');
+                    res.redirect('/listbooks/?msg=' + msg);
                 })
             }
             else
@@ -206,7 +219,8 @@ router.post('/addbook',isAdmin, (req, res) => {
                 const sql2 = "INSERT INTO books (title, author, genre, quantity) VALUES (?, ?, ?, ?)";
                 dbConn.query(sql2, [title, author, genre, quantity], (err2, result2) => {
                     if(err2) res.status(500).send("Server error");
-                    res.redirect('/listbooks');
+                    const msg=encodeURIComponent('Book added successfully!');
+                    res.redirect('/listbooks/?msg=' + msg);
                 })
             }
         })
@@ -241,7 +255,8 @@ router.post('/deletebook', isAdmin, (req, res) => {
             const sql="DELETE FROM books WHERE id = ?";
             dbConn.query(sql, id, (err, result) => {
             if(err) res.status(500).send("Server error");
-            res.redirect('/listbooks');
+            const msg=encodeURIComponent('Book deleted successfully!');
+            res.redirect('/listbooks/?msg=' + msg);
             })
         })
     }
@@ -270,7 +285,9 @@ router.get('/viewrequest', isAdmin,  (req, res)=>{
         dbConn.query(sql, (err, result)=>{
             if(err) res.status(500).send("Server error");
             const row=result;
-            res.render("viewrequest", {"request": row});
+            const msg=decodeURIComponent(req.query.msg);
+            if(!(req.query.msg)) return res.render("viewrequest", {"request": row, "msg": ""} );
+            res.render("viewrequest", {"request": row, "msg": msg});
         })
     }
     catch (error) {
@@ -280,16 +297,17 @@ router.get('/viewrequest', isAdmin,  (req, res)=>{
 
 router.post('/viewrequest', isAdmin, (req, res)=>{
     try{
-        console.log(req.body);  
         const option=req.body.choice;
-        if(option=="approve"){
+        console.log(option)
+        if(option=="Approve"){
         const reqid= req.body;
         const sql="UPDATE BookRequests SET Status = 'Approved', AcceptDate=NOW() WHERE RequestID = ?";
         dbConn.query(sql, reqid.id, (err, result) => {
             if(err) res.status(500).send("Server error");
             const sql1="UPDATE books SET quantity = quantity - 1 WHERE id = (SELECT BookID FROM BookRequests WHERE RequestID = ?)";
             dbConn.query(sql1, reqid.id, (err1, result1) => {
-            res.redirect('/viewrequest');
+                const msg=encodeURIComponent('Request Approved successfully!');
+                res.redirect('/viewrequest/?msg=' + msg);
             })
         })
     }
@@ -298,7 +316,8 @@ router.post('/viewrequest', isAdmin, (req, res)=>{
         const sql="DELETE FROM BookRequests WHERE RequestID = ?";
         dbConn.query(sql, reqid.id, (err1, result1) => {
             if(err1) res.status(500).send("Server error");
-            res.redirect('/viewrequest');
+            const msg=encodeURIComponent('Request Rejected successfully!');
+            res.redirect('/viewrequest/?msg=' + msg);
         })
     }
     }
@@ -315,7 +334,9 @@ router.get('/reqcheck',isClient, async (req, res)=>{
         dbConn.query(sql, userid, (err, result) => {
             if(err) res.status(500).send("Server error");
             const rows = result;
-            res.render("reqcheck", {"books": rows} );
+            const msg=decodeURIComponent(req.query.msg);
+            if(!(req.query.msg)) return res.render("reqcheck", {"books": rows, "msg": ""} );
+            res.render("reqcheck", {"books": rows, "msg": msg} );
         })
     }
     catch (error) {
@@ -330,7 +351,8 @@ router.post('/reqcheck',isClient, async (req, res)=>{
         const sql="INSERT INTO BookRequests (BookID, UserID, RequestDate, Status) VALUES (?, ?, NOW(), 'Pending')";
         dbConn.query(sql, [id, userid], (err, result) => {
             if(err) throw(err)
-            res.redirect('/reqcheck');
+            const msg=encodeURIComponent('Request sent successfully!');
+            res.redirect('/reqcheck/?msg=' + msg);
         })
 
 })
@@ -351,20 +373,6 @@ router.get('/borrowHistory',isClient, async (req, res)=>{
     }
 })
 
-router.post('/borrowHistory',isClient, (req, res)=>{
-    try{
-        const reqid= req.body.id;
-        console.log(reqid);
-        const sql='UPDATE BookRequests SET Status = "Returned", ReturnDate=NOW() WHERE RequestID = ?';
-        dbConn.query(sql, reqid, (err, result) => {
-            if(err) res.status(500).send("Server error");
-            res.redirect('/borrowHistory');
-        })
-    }
-    catch (error) {
-        res.status(500).send("Error while returning the book!");
-    }
-})
 
 router.get('/returnBook',isClient, async (req, res)=>{
     try{
@@ -374,7 +382,9 @@ router.get('/returnBook',isClient, async (req, res)=>{
         dbConn.query(sql,userid, (err, result)=>{
             if(err) res.status(500).send("Server error");
             const row=result;
-            res.render("returnBook", {"request": row});
+            const msg=decodeURIComponent(req.query.msg);
+            if(!(req.query.msg)) return res.render("returnBook", {"request": row, "msg": ""} );
+            res.render("returnBook", {"request": row, "msg": msg});
         })
     }
     catch (error) {
@@ -388,7 +398,8 @@ router.post('/returnBook',isClient, (req, res)=>{
         const sql='UPDATE BookRequests SET Status = "Returned", ReturnDate=NOW() WHERE RequestID = ?';
         dbConn.query(sql, reqid, (err, result) => {
             if(err) res.status(500).send("Server error");
-            res.redirect('/returnBook');
+            const msg=encodeURIComponent('Book returned successfully!');
+            res.redirect('/returnBook/?msg=' + msg);
         })
     }
     catch (error) {
@@ -398,7 +409,9 @@ router.post('/returnBook',isClient, (req, res)=>{
 
 router.get('/requestForAdmin',isClient, (req, res) => {
     try{
-        res.render('requestForAdmin');
+        const msg=decodeURIComponent(req.query.msg);
+        if(!(req.query.msg)) return res.render("requestForAdmin", {"msg": ""} );
+        res.render('requestForAdmin', {"msg": msg});
     }
     catch (error) {
         res.status(500).send("Error fetching Request for Admin page.");
@@ -413,7 +426,8 @@ router.post('/requestForAdmin',isClient, async (req, res) => {
         const username=jwt.username;
         dbConn.query(sql, [username, userid], (err, result) => {
             if(err) res.status(500).send("Server error");
-            res.redirect('/clientdash');
+            const msg=encodeURIComponent('Request sent successfully!');
+            res.redirect('/requestForAdmin/?msg=' + msg);
         })
     }
     catch (error) {
@@ -427,7 +441,9 @@ router.get('/addAdmin',isAdmin,  (req, res) => {
         dbConn.query(sql, (err, result) => {
             if(err) res.status(500).send("Server error");
             const rows = result;
-            res.render("addAdmin", {"users": rows} );
+            const msg=decodeURIComponent(req.query.msg);
+            if(!(req.query.msg)) return res.render("addAdmin", {"users": rows, "msg": ""} );
+            res.render("addAdmin", {"users": rows, "msg": msg} );
         })
     }
     catch (error) {
@@ -438,12 +454,13 @@ router.get('/addAdmin',isAdmin,  (req, res) => {
 router.post('/addAdmin', isAdmin, (req, res) => {
     try{
         const option=req.body.choice;
-        if(option=="approve"){
+        if(option=="Approve"){
         const userid=req.body.id;
         const sql="UPDATE Users SET isAdmin=1, adminStatus='isAdmin' WHERE userid=?";
         dbConn.query(sql, userid, (err, result) => {
             if(err) res.status(500).send("Server error");
-            res.redirect('/addAdmin');
+            const msg=encodeURIComponent('Admin added successfully!');
+            res.redirect('/addAdmin/?msg=' + msg);
         })
         }
         else{
@@ -451,7 +468,8 @@ router.post('/addAdmin', isAdmin, (req, res) => {
             const sql="UPDATE Users SET adminStatus='NotRequested' WHERE userid=?";
             dbConn.query(sql, userid, (err, result) => {
                 if(err) res.status(500).send("Server error");
-                res.redirect('/addAdmin');
+                const msg=encodeURIComponent('Request rejected successfully!');
+                res.redirect('/addAdmin/?msg=' + msg);
             })
         }
 

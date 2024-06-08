@@ -80,11 +80,13 @@
             <input type="hidden" name="id" value="<%= user.userid %>">
             <th scope="row"><input type="text" name="name" id="name" value="<%= user.username %>" disabled></th>
             <td><input type="text" name="acctcreate" id="acctcreate" value="<%= user.acctcreate %>" disabled></td>
-            <td><button type="submit" name="choice" class="btn make btn-secondary">Make Admin!</button><button name="choice" type="submit" class="btn deny btn-secondary">Deny</button></td>
+            <td><button type="submit" name="choice" value="Approve" class="btn make btn-secondary">Approve</button><button name="choice" value="Deny" type="submit" class="btn deny btn-secondary">Deny</button></td>
           </tr>
         </form>
           <% }); %>
-
+        </tbody>
+      </table>
+      <%= msg %>
       </center>
 </body>
 </html>

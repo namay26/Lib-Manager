@@ -59,7 +59,6 @@
     </div>
   </nav>
     <center>
-    <form action="/returnBook" method="POST">
     <table class="table item table-striped">
       <thead>
         <tr>
@@ -73,6 +72,7 @@
       </thead>
       <tbody>
         <% request.forEach(function(book) { %>
+          <form action="/returnBook" method="POST">
         <tr>
           <input type="hidden" name="id" value="<%= book.RequestID %>">
           <th scope="row"><%= book.title %></th>
@@ -82,10 +82,12 @@
           <td><%= book.AcceptDate %></td>
           <td><button type="submit" class="btn btn-primary">Return</button></td>
         </tr>
+      </form>
         <% }); %>
       </tbody>
       </table>  
-      </form>
+
+      <%= msg%>
     </center>
 </body>
 </html>

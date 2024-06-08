@@ -84,12 +84,13 @@
             <td><%= req.title %></td>
             <td><%= req.author %></td>
             <td><%= req.RequestDate %></td>
-            <td><button type="submit" name="choice" class="btn make btn-secondary">Approve</button><button name="choice" type="submit" class="btn deny btn-secondary">Deny</button></td>
+            <td><button type="submit" name="choice" value="Approve" class="btn make btn-secondary">Approve</button><button name="choice" type="submit" value="Deny" class="btn deny btn-secondary">Deny</button></td>
           </tr>
         </form>
           <% }); %>
         </tbody>
         </table>
+        <%= msg %>
       </center>
 </body>
 </html>
