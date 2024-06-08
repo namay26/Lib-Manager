@@ -7,8 +7,8 @@ dotenv.config();
 
 const router = express.Router();
 
-
 router.get('/', (req, res) => {
+    res.clearCookie('AccToken');
     res.render("home");
 })
 
@@ -130,10 +130,26 @@ router.get('/addbook',isAdmin, (req, res) => {
 
 router.post('/addbook',isAdmin, (req, res) => {
     const { title, author, genre, quantity } = req.body;
-    const sql = "INSERT INTO books (title, author, genre, quantity) VALUES (?, ?, ?, ?)";
-    dbConn.query(sql, [title, author, genre, quantity], (err, result) => {
-        if(err) throw err;
-        res.redirect('/listbooks');
+    if(quantity < 1) return res.status(401).send("Quantity must be greater than 0");
+    const checkDuplicate="SELECT * FROM books WHERE title= ? AND author= ?";
+    dbConn.query(checkDuplicate, [title, author], (err1, results) => {
+        if(err1) return res.status(500).send("Server error");
+        if(results.length > 0)
+        {
+            const sql = "UPDATE books SET quantity = quantity + ? WHERE title = ? AND author = ?";
+            dbConn.query(sql, [quantity, title, author], (err, result) => {
+                if(err) throw err;
+                res.redirect('/listbooks');
+            })
+        }
+        else
+        {
+            const sql2 = "INSERT INTO books (title, author, genre, quantity) VALUES (?, ?, ?, ?)";
+            dbConn.query(sql2, [title, author, genre, quantity], (err2, result2) => {
+                if(err2) throw err2;
+                res.redirect('/listbooks');
+            })
+        }
     })
 })
 
@@ -212,7 +228,7 @@ router.post('/reqcheck',isClient, async (req, res)=>{
 })
 
 router.get('/borrowHistory',isClient, async (req, res)=>{
-    const sql="SELECT BookRequests.RequestID, books.title, books.author, books.genre, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=? AND BookRequests.Status='Approved'" 
+    const sql="SELECT BookRequests.RequestID,BookRequests.Status, BookRequests.ReturnDate, books.title, books.author, books.genre, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=?" 
     const jwt = await verifyToken(req.cookies.AccToken);
     const userid=jwt.id;
     dbConn.query(sql,userid, (err, result)=>{
@@ -228,6 +244,25 @@ router.post('/borrowHistory',isClient, (req, res)=>{
     dbConn.query(sql, reqid, (err, result) => {
         if(err) throw err;
         res.redirect('/borrowHistory');
+    })
+})
+
+router.get('/returnBook',isClient, async (req, res)=>{
+    const sql="SELECT BookRequests.RequestID, books.title, books.author, books.genre, BookRequests.RequestDate, BookRequests.AcceptDate FROM BookRequests JOIN books ON books.id=BookRequests.BookID WHERE BookRequests.UserID=? AND BookRequests.Status='Approved'" 
+    const jwt = await verifyToken(req.cookies.AccToken);
+    const userid=jwt.id;
+    dbConn.query(sql,userid, (err, result)=>{
+        const row=result;
+        res.render("returnBook", {"request": row});
+    })
+})
+
+router.post('/returnBook',isClient, (req, res)=>{
+    const reqid= req.body.id;
+    const sql='UPDATE BookRequests SET Status = "Returned", ReturnDate=NOW() WHERE RequestID = ?';
+    dbConn.query(sql, reqid, (err, result) => {
+        if(err) throw err;
+        res.redirect('/returnBook');
     })
 })
 
@@ -262,6 +297,11 @@ router.post('/addAdmin', isAdmin, (req, res) => {
         if(err) throw err;
         res.redirect('/addAdmin');
     })
+})
+
+router.get('/logout', (req, res) => {
+    res.clearCookie('AccToken');
+    res.redirect('/');
 })
 
 export default router;

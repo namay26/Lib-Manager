@@ -22,20 +22,38 @@
         .container{
             display: flex;
             justify-content: center;
-            align-items: center;
-            width: max;
+            align-items: center;    
             margin-top: 2in;
+            padding:0.3in;
+            width: max-content;
             flex-direction: column;
-        }
+            border: rgb(0, 0, 0, 0.8) 1px solid;
+            border-radius:0.1in;  
+        }     
         .container div{
             margin:0.1in;
         }
     </style>
 </head>
 <body>
-    <header>
-        Welcome to Lib-Manager
-    </header>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Lib-Manager</a>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" aria-current="page" href="/">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href="/login">Login</a>
+              </li>
+            </ul>
+          </div>
+          <div class="right">
+              <a href="/register"><input type="button" value="Register" class="reg"></a>
+          </div>
+        </div>
+    </nav>
     <div class="container">
         <form action="" method="POST">
             <div>
@@ -47,9 +65,10 @@
                 <input type="password" name="password" id="password" required>
             </div>
             <div>
-                <button class="btn btn-primary" type="submit">Login</button>
+                <center><button class="btn btn-primary" type="submit">Login</button></center>
             </div>
         </form>
     </div>
+
 </body>
 </html>

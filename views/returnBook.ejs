@@ -16,6 +16,7 @@
         text-align: center;
       }
     </style>
+
 </head>
 <body>
   <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
@@ -49,28 +50,33 @@
     </div>
   </nav>
     <center>
+    <form action="/returnBook" method="POST">
     <table class="table item table-striped">
       <thead>
         <tr>
-          <th scope="col">Id</th>
-          <th scope="col">Book Title</th>
-          <th scope="col">Book Author</th>
-          <th scope="col">Book Genre</th>
-          <th scope="col">Book Quantity</th>
+          <th scope="col">Title</th>
+          <th scope="col">Author</th>
+          <th scope="col">Genre</th>
+          <th scope="col">Requested Date</th>
+          <th scope="col">Accepted Date</th>
+          <th scope="col">Return</th>
         </tr>
       </thead>
       <tbody>
-        <% books.forEach(function(book) { %>
+        <% request.forEach(function(book) { %>
         <tr>
-          <th scope="row"><%= book.id %></th>
-          <td><%= book.title %></td>
+          <input type="hidden" name="id" value="<%= book.RequestID %>">
+          <th scope="row"><%= book.title %></th>
           <td><%= book.author %></td>
           <td><%= book.genre %></td>
-          <td><%= book.quantity %></td>
+          <td><%= book.RequestDate %></td>
+          <td><%= book.AcceptDate %></td>
+          <td><button type="submit" class="btn btn-primary">Return</button></td>
         </tr>
         <% }); %>
       </tbody>
-    </table>
-  </center>
+      </table>  
+      </form>
+    </center>
 </body>
 </html>

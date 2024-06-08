@@ -3,23 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" defer></script>
     <title>Document</title>
+    <style>
+      .right{
+        background-color: #444969;
+        border: 1px solid #444969;
+      }
+      .item{
+        width:80%;
+        text-align: center;
+      }
+    </style>
 </head>
 <body>
-    <ul>
-        <% books.forEach(function(book) { %>
-            <li>    
-                <form action="/reqcheck" method="POST">
-                    <input type="hidden" name="id" value="<%= book.id %>">
-                    <label for="title">Title:</label>
-                    <input type="text" name="title" id="title" value="<%= book.title %>" disabled>
-                    <label for="author">Author:</label>
-                    <input type="text" name="author" id="author" value="<%= book.author %>" disabled>
-                    <button type="submit">Request for Checkout!</button>
-                </form>
-            </li>
-        <% }); %>
-    </ul>
-    </form>
+  <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Lib-Manager</a>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="/clientdash">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/listclient">List</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/reqcheck">Request for Checkout</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/borrowHistory">Borrowing History</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/returnBook">Return Book</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/requestForAdmin">Request for Admin Privileges</a>
+          </li>
+        </ul>
+        <div>
+          <input type="button" class="right" value="Client" disabled>
+        </div>
+      </div>
+    </div>
+  </nav>
+      <center>
+      <form action="/reqcheck" method="POST">
+      <table class="table item table-striped">
+        <thead>
+          <tr>
+            <th scope="col">Title</th>
+            <th scope="col">Author</th>
+            <th scope="col">Genre</th>
+            <th scope="col">Request</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% books.forEach(function(book) { %>
+          <tr>
+            <input type="hidden" name="id" value="<%= book.id %>">
+            <th scope="row"><%= book.title %></th>
+            <td><%= book.author %></td>
+            <td><%= book.genre %></td>
+            <td><button type="submit">Request for Checkout!</button></td>
+          </tr>
+          <% }); %>
+        </tbody>
+        </table>
+       </form>
+      </center>
 </body>
 </html>
